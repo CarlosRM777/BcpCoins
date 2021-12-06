@@ -1,0 +1,18 @@
+version: "3.5"
+
+services:
+ backendcoins:
+  image: carlosrm7/coinsbcp
+  ports: 
+  - 8080:8080
+  environment:
+   SPRING_DATASOURCE_URL: jdbc:mysql://docker-mysql/Foro?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDateTimeCode=false&serverTimezone=UTC
+   SPRING_DATASOURCE_USERNAME: root
+   SPRING_DATASOURCE_PASSWORD: root@crm7
+   SPRING_JPA_DATABASE: MYSQL
+ frontendcoins:
+  image: carlosrm7/coinsfront
+  ports: 
+  - 4200:4200
+  depends_on:
+  - backendcoins
