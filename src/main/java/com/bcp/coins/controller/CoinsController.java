@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,7 @@ import com.bcp.coins.dto.ExchangeRateUpdRequest;
 import com.bcp.coins.dto.ExchangeRateUpdResponse;
 import com.bcp.coins.model.ErrorMessage;
 import com.bcp.coins.security.JWTServiceAuth0;
+import com.bcp.coins.service.CoinService;
 import com.bcp.coins.service.ExchangeOperationService;
 import com.bcp.coins.service.ExchangeRateService;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -33,11 +35,14 @@ import rx.schedulers.Schedulers;
 @PreAuthorize("authenticated")
 @RestController
 @RequestMapping("v1/exchange")
+@CrossOrigin("http://localhost:4200/")
 public class CoinsController {
 	@Autowired
 	private ExchangeOperationService exchangeOperationService;
 	@Autowired
 	private ExchangeRateService exchangeRateService;
+	@Autowired
+	private CoinService coinService;
 	
 	@Autowired
 	private JWTServiceAuth0 lJwtService;
@@ -57,8 +62,8 @@ public class CoinsController {
 		}
 	}
 	
-	@PutMapping("/coin")
-	public ResponseEntity<?> updCoinValue(final @RequestBody ExchangeRateUpdRequest tipoCambioUpdRequest) {
+	@PutMapping("/")
+	public ResponseEntity<?> updEchangeValue(final @RequestBody ExchangeRateUpdRequest tipoCambioUpdRequest) {
 		try {
 			logger.info("Put Request received for v1/exchange/coin with Request Body: {}", tipoCambioUpdRequest);
 			return exchangeRateService.updExchangeRate(tipoCambioUpdRequest).subscribeOn(Schedulers.io()).map(
@@ -70,11 +75,24 @@ public class CoinsController {
 		}
 	}
 	
-	@GetMapping("/coin")
+	@GetMapping("/")
 	public ResponseEntity<?> getAllValueExchanges() {
 		try {
-			logger.info("Get Request received for v1/exchange/coin");
+			logger.info("Get Request received for v1/exchange/");
 			return exchangeRateService.findAllExchangeRates().subscribeOn(Schedulers.io()).map(
+	            s -> ResponseEntity.ok().body(s)).toBlocking().value();
+		}
+		catch(Exception ex) {
+			logger.error("Error on request received for v1/exchange/coin with error: {}", ex.getMessage());
+			return ResponseEntity.badRequest().body(new ErrorMessage(ex, "v1/exchange/"));
+		}
+	}
+	
+	@GetMapping("/coin")
+	public ResponseEntity<?> getCoins() {
+		try {
+			logger.info("Get Request received for v1/exchange/coin");
+			return coinService.getAllCoins().subscribeOn(Schedulers.io()).map(
 	            s -> ResponseEntity.ok().body(s)).toBlocking().value();
 		}
 		catch(Exception ex) {
@@ -100,7 +118,7 @@ public class CoinsController {
 			return ResponseEntity.ok(hashMap);
 		} catch (Exception ex) {
 			logger.error("Error on request received for v1/exchange/token with error: {}", ex.getMessage());
-			return ResponseEntity.badRequest().body(new ErrorMessage(ex, "v1/exchange/coin"));
+			return ResponseEntity.badRequest().body(new ErrorMessage(ex, "v1/exchange/token"));
 		}
 	}
 }

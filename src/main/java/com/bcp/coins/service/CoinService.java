@@ -1,5 +1,6 @@
 package com.bcp.coins.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.EntityNotFoundException;
@@ -27,6 +28,18 @@ public class CoinService {
 				singleSubscriber.onSuccess(optCoin.get());
 			else
 				singleSubscriber.onError(new EntityNotFoundException("Moneda "+ originCoin+" No Existe"));
+		}); 
+	}
+	
+	public Single<List<Coin>> getAllCoins() {
+		return Single.create(singleSubscriber -> {
+			try {
+				List<Coin> listCoin = coinRepository.findAll();
+				singleSubscriber.onSuccess(listCoin);
+			}
+			catch (Exception ex) {
+				singleSubscriber.onError(new EntityNotFoundException("No se pudo obtener monedas con error "+ex.getMessage()));
+			}
 		}); 
 	}
 	
