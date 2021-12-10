@@ -2,11 +2,11 @@ version: "3.5"
 
 services:
  backendcoins:
-  image: carlosrm7/coinsbcp
+  image: carlosrm7/coinsbackend
   ports: 
   - 8080:8080
  frontendcoins:
-  image: carlosrm7/coinsfront
+  image: carlosrm7/coinsfrontend
   ports: 
   - 4200:4200
   depends_on:
