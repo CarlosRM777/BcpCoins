@@ -26,13 +26,15 @@ public class ExchangeOperationService {
 	@Autowired
 	private ExchangeRateService exchangeRateService;
 	
+	private BigDecimal initialAmount;
+	
 	public Single<ExchangeOperationResponse> createExchangeOperation(final ExchangeOperationRequest exchangeRequest) {
 		return Single.create(singleSubscriber -> {
 			Single<Coin> sOriCoin = coinService.getCoinByShortName(exchangeRequest.getMonedaOrigen());
 			Single<Coin> sDesCoin = coinService.getCoinByShortName(exchangeRequest.getMonedaDestino());
+			initialAmount = exchangeRequest.getMonto();
+			
 			ExchangeOperationResponse exchangeOpeRes = Single.zip(sOriCoin, sDesCoin, this::getExchangeRate).toBlocking().value();
-			exchangeOpeRes.setMontoInicial(exchangeRequest.getMonto());
-			exchangeOpeRes.setMontoCambiado(exchangeRequest.getMonto().multiply(exchangeOpeRes.getTipoCambio()));			
 			singleSubscriber.onSuccess(exchangeOpeRes);
 			singleSubscriber.onError(new Exception("ERROR"));
 		});
@@ -42,14 +44,17 @@ public class ExchangeOperationService {
 		try {
 			ExchangeRate exchangeRate = exchangeRateService.getExchangeRateByShortNames(pOrigin.getShortName(), pDestination.getShortName())
 					.toBlocking().value();
+			BigDecimal exchangeRateValue = exchangeRate.getExchangeRate();
 			exchangeOperationRepository.save(
 					ExchangeOperation.builder().originCoin(pOrigin)
-					.destinationCoin(pDestination).exchangeRate(exchangeRate.getExchangeRate())
+					.destinationCoin(pDestination).exchangeRate(exchangeRateValue)
+					.inicialAmount(initialAmount).exchangedAmount(initialAmount.multiply(exchangeRateValue))
 					.operationDate(LocalDateTime.now()).build());
 			return ExchangeOperationResponse.builder()
 					.monedaOrigen(pOrigin.getShortName())
 					.monedaDestino(pDestination.getShortName())
-					.tipoCambio(exchangeRate.getExchangeRate()).build();
+					.tipoCambio(exchangeRateValue).montoInicial(initialAmount).montoCambiado(initialAmount.multiply(exchangeRateValue))
+					.build();
 		}
 		catch(Exception ex) {
 			throw ex;
